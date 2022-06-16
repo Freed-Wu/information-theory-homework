@@ -1,0 +1,32 @@
+%! TeX program = lualatex
+\documentclass[tikz]{standalone}
+\usetikzlibrary{arrows.meta, quotes, graphs, graphdrawing}
+\usegdlibrary{layered}
+\usepackage{hyperref}
+\title{main}
+\author{wzy\thanks{USTC}}
+\begin{document}
+\begin{tikzpicture}[rounded corners, >=Stealth, auto]
+  \graph[layered layout, nodes={draw}, grow'=right]{%
+    "structured probabilistic model" -> {
+      "directed graphical model" -> {
+        "linear factor model" -> {
+          probabilistic PCA,
+          sparse coding,
+          ICA,
+          slow feature analysis,
+        }, "nonlinear model" -> {
+          AE,
+          VAE,
+          denoise AE,
+          contractive AE,
+          Normalized Flow,
+        }
+      },
+      "undirected graphical model" -> "Energy-based model" -> "Boltzmann machine" -> {
+        "restricted Boltzmann machine", "deep Boltzmann network", "deep belief network"
+      }
+  };
+  };
+\end{tikzpicture}
+\end{document}

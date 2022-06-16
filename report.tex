@@ -1,0 +1,203 @@
+%! TeX program = lualatex
+\documentclass{article}
+\usepackage{standalone}
+\usepackage{graphicx}
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{physics}
+\usepackage{txfonts}
+\usepackage{hyperref}
+\title{The Relationship of Information Bottleneck and VAE}
+\author{Wu Zhenyu\thanks{\href{https://ustc.edu.cn/}{USTC}}}
+\usepackage{cleveref}
+\begin{document}
+
+\maketitle
+
+\section{Supervised Learning}
+
+For general supervised learning model \cref{fig:supervised}, which data is $\bm{X}$ and label is $\bm{Y}$, its
+NLL is as \cref{eq:supervised}. Where $p_\mathrm{data}(\bm{x}, \bm{y})$,
+$p_\mathrm{train}(\bm{x}, \bm{y})$ is the distribution of $(\bm{X}, \bm{Y})$ in
+dataset and trainset. Only in the first epoch, there are same. Because after the
+first epoch (all samples of trainset has been known by model), the data sampled from
+trainset will not be independent, however, the data sampled from true dataset
+will always i.i.d..
+
+\begin{figure}[htpb]
+  \centering
+  \includestandalone[mode=buildnew, width=0.8\textwidth]{figures/supervised}
+  \caption{Directed graph for general supervised learning model}%
+  \label{fig:supervised}
+\end{figure}
+
+\begin{align}
+  \label{eq:supervised}
+  \min_{\bm{\theta}} L
+  & = -\frac1n\log p_{\bm{\theta}}(\bm{X}^n, \bm{Y}^n)\\
+  & = -\frac1n\log\prod_{k = 1}^n p_{\bm{\theta}}(\bm{X}_k, \bm{Y}_k)\\
+  & = -\frac1n\sum_{k = 1}^n\log p_{\bm{\theta}}(\bm{X}_k, \bm{Y}_k)\\
+  & \mathop{\longrightarrow}^{n \rightarrow \infty}
+  -\mathop{\mathbb{E}}_{(\bm{X}, \bm{Y}) \sim p_\mathrm{train}(\bm{x}, \bm{y})}
+  \log p_{\bm{\theta}}(\bm{X}, \bm{Y})\\
+  & \approx -\mathop{\mathbb{E}}_{(\bm{X}, \bm{Y}) \sim
+  p_\mathrm{data}(\bm{x}, \bm{y})}\log p_{\bm{\theta}}(\bm{X}, \bm{Y})
+\end{align}
+
+We use maximum entropy distribution as $p_{\bm{\theta}}(\bm{Y}\mid\bm{X})$. If
+$\bm{Y}$ is continuous random variable, we suppose it conditionally subjects to
+2-order exponential distribution family --- normal distribution
+$p_{\bm{\theta}}(\bm{Y}\mid\bm{X}) =
+\mathcal{N}(\bm{Y}\mid\bm{f}_{\bm{\theta}(\bm{X})}, \beta^{-1}\bm{I})$.
+Because 1-order exponential distribution family is exponential distribution
+which has a lower bound. \cref{eq:mse} becomes MSE{}.
+
+\begin{align}
+  \label{eq:mse}
+  \arg\min_{\bm{\theta}}L
+  & = -\arg\min_{\bm{\theta}}
+  \mathop{\mathbb{E}}_{(\bm{X}, \bm{Y}) \sim p_\mathrm{train}(\bm{x}, \bm{y})}
+  \log\exp(-\frac{\beta}{2} \norm{\bm{Y} - \bm{f}_{\bm{\theta}}(\bm{X})})\\
+  & = \arg\min_{\bm{\theta}}
+  \mathop{\mathbb{E}}_{(\bm{X}, \bm{Y}) \sim p_\mathrm{train}(\bm{x}, \bm{y})}
+  \norm{\bm{Y} - \bm{f}_{\bm{\theta}}(\bm{X})}
+\end{align}
+
+Similarly, if $\bm{Y}$ is discrete random variable, we suppose it conditionally
+subjects to 1-order exponential distribution family --- boltzmann distribution
+$p_{\bm{\theta}}(\bm{Y}\mid\bm{X}) =
+\frac{\bm{1}_{Y}^\mathsf{T}\mathrm{e}^{\bm{f}_\theta(\bm{X})}}
+{\bm{1}^\mathsf{T}\mathrm{e}^{\bm{f}_\theta(\bm{X})}}$.
+
+In Baysian estimation, $p_{\bm{\theta}}(\bm{X}, \bm{Y}) =
+p(\bm{Y}\mid\bm{X}, \bm{\theta})p(\bm{X})p(\bm{\theta})$. If $p(\bm{\theta})$ is a
+normal distribution or laplacian distribution, it will equal to add a
+L2 or L1 regularization loss to NLL loss.
+
+\section{VAE}
+
+As \cref{fig:category}, Variational Autoencoder is a famous non-linear
+directed graphical model which task is usually probability density estimation
+and generation.
+
+\begin{figure}[htpb]
+  \centering
+  \includestandalone[mode=buildnew, width=\textwidth]{figures/category}
+  \caption{categories of structured probabilistic model. Because only the first layer of deep belief nework is directed, so DBN should be mixed graphical model in strict}%
+  \label{fig:category}
+\end{figure}
+
+VAE's structure is as \cref{fig:vae}. In train stage, we use trainset to
+estimate the best parameters for the model. In test stage, we use negative
+logarithmic likelihood to evaluate the model. In generate stage, We sample some
+$\bm{z}$ from $\bm{Z}$, then decode them to $\bm{x}$. $\bm{x}$ can be a fake
+image or video.
+
+\begin{figure}[htpb]
+  \centering
+  \includestandalone[mode=buildnew, width=0.8\textwidth]{figures/vae}
+  \caption{VAE's directed graph, where respect to tradition, encoder use
+    $q_{\bm{\phi}}(\bm{z}\mid\bm{x})$ and decoder use
+  $p_{\bm{\theta}}(\bm{x}\mid\bm{z})$. Our purpose is to use MAP/ML to estimate
+  a best $\bm{\vartheta} = (\bm{\theta}, \bm{\phi})$}%
+  \label{fig:vae}
+\end{figure}
+
+Notice similarity between \cref{fig:supervised} and
+\cref{fig:vae}, we have \cref{eq:vae}. We call the first item reconstruction
+loss item or distortion item, and call the second item regularization item or
+rate item. Because some experiments prove the regularization item and rate item
+has a convex curve like rate distortion function.\cite{park2021interpreting}
+
+\begin{align}
+  \label{eq:vae}
+  \min_{\bm{\vartheta}} L
+  & = -\mathop{\mathbb{E}}_{(\bm{Z}, \bm{X}) \sim q_{\bm{\phi}}(\bm{z}, \bm{x})}
+  \log p_{\bm{\theta}}(\bm{Z}, \bm{X})\\
+  & = -\mathop{\mathbb{E}}_{(\bm{Z}, \bm{X}) \sim q_{\bm{\phi}}(\bm{z}, \bm{x})}
+  \Big(\log p_{\bm{\theta}}(\bm{X}\mid\bm{Z}) + \log p(\bm{Z})\Big)
+\end{align}
+
+Another method is evidence lower bound: \cref{eq:elbo}. We can use EM algorithm
+to optimize it and get the same result.
+
+\begin{align}
+  \label{eq:elbo}
+  \log p_{\bm{\theta}}(\bm{X})
+  & \geqslant \log p_{\bm{\theta}}(\bm{X}) -
+  D(q_{\bm{\phi}}(\bm{z}\mid\bm{x})\mid\mid p_{\bm{\theta}}(\bm{z}\mid\bm{x}))\\
+  & = \log p_{\bm{\theta}}(\bm{X}) + H(q_{\bm{\phi}}(\bm{z}\mid\bm{x})) +
+  \mathop{\mathbb{E}}_{(\bm{Z}\mid\bm{X} = \bm{x}) \sim q_{\bm{\phi}}(\bm{z}\mid\bm{x})}
+  \log p_{\bm{\theta}}(\bm{Z}\mid\bm{X})\\
+  & = H(q_{\bm{\phi}}(\bm{z}\mid\bm{x})) +
+  \mathop{\mathbb{E}}_{(\bm{Z}\mid\bm{X} = \bm{x}) \sim q_{\bm{\phi}}(\bm{z}\mid\bm{x})}
+  \Big(\log p_{\bm{\theta}}(\bm{Z}\mid\bm{X}) + \log p_{\bm{\theta}}(\bm{X})\Big)\\
+  & = H(q_{\bm{\phi}}(\bm{z}\mid\bm{x})) +
+  \mathop{\mathbb{E}}_{(\bm{Z}\mid\bm{X} = \bm{x}) \sim q_{\bm{\phi}}(\bm{z}\mid\bm{x})}
+  \Big(\log p_{\bm{\theta}}(\bm{X}\mid\bm{Z}) + \log p(\bm{Z})\Big)\\
+  & = \mathop{\mathbb{E}}_{(\bm{Z}\mid\bm{X} = \bm{x}) \sim q_{\bm{\phi}}(\bm{z}\mid\bm{x})}
+  \log p_{\bm{\theta}}(\bm{X}\mid\bm{Z}) -
+  D(q_{\bm{\phi}}(\bm{z}\mid\bm{x})\mid\mid p(\bm{z}))\\
+  \max_{\bm{\theta}}\mathop{\mathbb{E}}_{\bm{X} \sim p_\mathrm{train}(\bm{x})}
+  \log p_{\bm{\theta}}(\bm{X})
+  & \geqslant
+  \max_{\bm{\vartheta}}\Big(
+  \mathop{\mathbb{E}}_{(\bm{Z}, \bm{X}) \sim q_{\bm{\phi}}(\bm{z}, \bm{x})}
+  \log p_{\bm{\theta}}(\bm{X}\mid\bm{Z}) -
+  \mathop{\mathbb{E}}_{\bm{X} \sim p_\mathrm{train}(\bm{x})}
+  D(q_{\bm{\phi}}(\bm{z}\mid\bm{X})\mid\mid p(\bm{z}))\Big)
+\end{align}
+
+One amazing fact is information bottleneck can give a new direction to explain
+the loss of VAE.\cite{alemi2016deep}
+
+\section{Information Bottleneck}
+
+In \cref{fig:supervised}, we hope to get a minimal sufficient statistic
+\cref{eq:statistic}.
+
+\begin{align}
+  \label{eq:statistic}
+  \min_{\hat{\bm{Y}}: I(\hat{\bm{Y}}; \bm{Y}) = I(\bm{X}; \bm{Y})} I(\hat{\bm{Y}}; \bm{X})
+\end{align}
+
+Because $I(\hat{\bm{Y}}; \bm{Y}) \leqslant I(\bm{X}; \bm{Y})$. We can optimize
+\cref{eq:ib}
+
+\begin{align}
+  \label{eq:ib}
+  \max_{\hat{\bm{Y}}} I(\hat{\bm{Y}}; \bm{Y}) - \beta I(\hat{\bm{Y}}; \bm{X})
+\end{align}
+
+For a unsupervised learning model \cref{fig:vae}, $\bm{K} \rightarrow \bm{X} \rightarrow \bm{Z}
+\rightarrow \hat{\bm{X}}$, \cref{eq:ib} will become \cref{eq:ib2}. Where,
+$\bm{K}$ is the id of $\bm{X}$. \cref{eq:ib3} has a same result with ELBO
+\cref{eq:elbo}.
+
+\begin{align}
+  \label{eq:ib2}
+  \max_{\bm{Z}} I(\bm{Z}; \bm{X}) - \beta I(\bm{Z}; \bm{N})
+\end{align}
+
+\begin{align}
+  \label{eq:ib3}
+  I(\bm{Z}, \bm{X}) & = \iint q_{\bm{\phi}}(\bm{z}, \bm{x})\log\frac{q_{\bm{\phi}}(\bm{x}\mid\bm{z})}{p_\mathrm{train}(\bm{x})}\dd{\bm{x}}\dd{\bm{z}}\\
+          & = H(\bm{X}) + \iint q_{\bm{\phi}}(\bm{z}, \bm{x})\log q_{\bm{\phi}}(\bm{x}\mid\bm{z})\dd{\bm{x}}\dd{\bm{z}}\\
+          & \geqslant \iint q_{\bm{\phi}}(\bm{z}, \bm{x})\log q_{\bm{\theta}}(\bm{x}\mid\bm{z})\dd{\bm{x}}\dd{\bm{z}}\\
+          & \geqslant \iint q_{\bm{\phi}}(\bm{z}, \bm{x})\log p_{\bm{\theta}}(\bm{x}\mid\bm{z})\dd{\bm{x}}\dd{\bm{z}}\\
+          & = \mathop{\mathbb{E}}_{(\bm{Z}, \bm{X}) \sim q_{\bm{\phi}}(\bm{z}, \bm{x})}
+          \log p_{\bm{\theta}}(\bm{X}\mid\bm{Z})\\
+  I(\bm{Z}, \bm{K}) & = \sum_{k = 1}^n\int q_{\bm{\phi}}(k, \bm{z})\log\frac{q_{\bm{\phi}}(\bm{z}\mid k)}{p(\bm{z})}\dd{\bm{z}}\\
+          & = \frac1n\sum_{k = 1}^n\int q_{\bm{\phi}}(\bm{z}\mid k)\log\frac{q_{\bm{\phi}}(\bm{z}\mid k)}{p(\bm{z})}\dd{\bm{z}}\\
+          & = \frac1n\sum_{k = 1}^n\int q_{\bm{\phi}}(\bm{z}\mid\bm{x}_k)\log\frac{q_{\bm{\phi}}(\bm{z}\mid\bm{x}_k)}{p(\bm{z})}\dd{\bm{z}}\\
+          & = \mathop{\mathbb{E}}_{\bm{X} \sim p_\mathrm{train}(\bm{x})} D(q_{\bm{\phi}}(\bm{z}\mid k)\mid\mid p(\bm{z}))\\
+  I(\bm{Z}; \bm{X}) - \beta I(\bm{Z}; \bm{K}) & \geqslant
+  \mathop{\mathbb{E}}_{(\bm{Z}, \bm{X}) \sim q_{\bm{\phi}}(\bm{z}, \bm{x})}
+  \log p_{\bm{\theta}}(\bm{X}\mid\bm{Z}) -
+  \beta\mathop{\mathbb{E}}_{\bm{X} \sim p_\mathrm{train}(\bm{x})} D(q_{\bm{\phi}}(\bm{z}\mid k)\mid\mid p(\bm{z}))
+\end{align}
+
+\bibliographystyle{ieeetr}
+\bibliography{refs/main.bib}
+
+\end{document}

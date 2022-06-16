@@ -1,0 +1,18 @@
+%! TeX program = lualatex
+\documentclass[tikz]{standalone}
+\usetikzlibrary{arrows.meta, quotes, graphs, graphdrawing}
+\usegdlibrary{layered}
+\usepackage{bm}
+\usepackage{hyperref}
+\title{main}
+\author{wzy\thanks{USTC}}
+\begin{document}
+\begin{tikzpicture}[rounded corners, >=Stealth, auto]
+  \graph[layered layout, nodes={draw}, math nodes, grow=right, level distance=2cm]{%
+    "\bm{X}"[label=$p_\mathrm{data}(\bm{x})$]
+    ->["$q_{\bm{\phi}}(\bm{z}|\bm{x})$"]
+    "\bm{Z}"[label=$p(\bm{z})$] ->["$p_{\bm{\theta}}(\bm{x}|\bm{z})$"]
+    "\hat{\bm{X}}"[label=$p_{\bm{\theta}}(\bm{x})$];
+  };
+\end{tikzpicture}
+\end{document}
